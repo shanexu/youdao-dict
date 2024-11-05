@@ -33,11 +33,13 @@ struct ApiResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct WordPage {
+    word_head: String,
     phone_con: String,
     simple_dict: String,
     catalogue_sentence: String,
 }
 
+#[allow(dead_code)]
 async fn suggest(client: &Client, q: &str) -> Result<ApiResponse, Box<dyn Error>> {
     let mut url =
         Url::parse("https://dict.youdao.com/suggest?num=5&ver=3.0&doctype=json&cache=false&le=en")?;
@@ -51,38 +53,48 @@ async fn word_result(client: &Client, word: &str) -> Result<WordPage, Box<dyn Er
     url.query_pairs_mut().append_pair("word", word);
     let body = client.get(url).send().await?.text().await?;
     let dom = Html::parse_document(&body);
+    let word_head_selector = Selector::parse(".word-head .title")?;
+    let word_head: String = dom
+        .select(&word_head_selector)
+        .next()
+        .unwrap()
+        .text()
+        .into_iter()
+        .next()
+        .unwrap()
+        .to_string();
     let phone_con_selector = Selector::parse(".phone_con")?;
-    let phone_con_content = dom
+    let phone_con = dom
         .select(&phone_con_selector)
         .into_iter()
         .next()
-        .unwrap()
-        .html();
-    let phone_con_content = html2text::from_read(phone_con_content.as_bytes(), 200).unwrap();
+        .map(|t| t.html())
+        .map(|h| html2text::from_read(h.as_bytes(), 200).unwrap())
+        .unwrap_or_default();
 
     let simple_dict_selector = Selector::parse(".simple.dict-module")?;
-    let simple_dict_content = dom
+    let simple_dict = dom
         .select(&simple_dict_selector)
         .into_iter()
         .next()
-        .unwrap()
-        .html();
-    let simple_dict_content = html2text::from_read(simple_dict_content.as_bytes(), 200).unwrap();
+        .map(|t| t.html())
+        .map(|h| html2text::from_read(h.as_bytes(), 200).unwrap())
+        .unwrap_or_default();
 
     let catalogue_sentence_selector = Selector::parse("#catalogue_sentence .dict-book")?;
-    let catalogue_sentence_content = dom
+    let catalogue_sentence = dom
         .select(&catalogue_sentence_selector)
         .into_iter()
         .next()
-        .unwrap()
-        .html();
-    let catalogue_sentence_content =
-        html2text::from_read(catalogue_sentence_content.as_bytes(), 200).unwrap();
+        .map(|t| t.html())
+        .map(|h| html2text::from_read(h.as_bytes(), 200).unwrap())
+        .unwrap_or_default();
 
     Ok(WordPage {
-        phone_con: phone_con_content,
-        simple_dict: simple_dict_content,
-        catalogue_sentence: catalogue_sentence_content,
+        word_head,
+        phone_con,
+        simple_dict,
+        catalogue_sentence,
     })
 }
 
@@ -92,14 +104,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // let resp = suggest(&client, "test").await?;
     // println!("{resp:#?}");
     let args: Vec<String> = args().collect();
-    let mut args_iter = args.into_iter();
+    let mut args_iter = args.iter();
     args_iter.next();
-    let w = args_iter.next().unwrap();
+    let word = args_iter.next().unwrap();
 
-    let word = word_result(&client, &w).await?;
+    let result = word_result(&client, &word).await?;
     println!(
-        "{}\n{}\n{}\n",
-        word.phone_con, word.simple_dict, word.catalogue_sentence
+        "{}:\n{}\n{}\n{}\n",
+        result.word_head, result.phone_con, result.simple_dict, result.catalogue_sentence
     );
 
     Ok(())
