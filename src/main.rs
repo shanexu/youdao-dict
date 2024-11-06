@@ -3,20 +3,20 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Position},
     style::{Color, Modifier, Style, Stylize},
-    text::{Line, Span, Text},
-    widgets::{Block, List, ListItem, Paragraph},
+    text::{Line, Text},
+    widgets::{Block, Paragraph},
     DefaultTerminal, Frame,
 };
 use reqwest::Client;
-use tokio::runtime::Runtime;
 use youdao::WordResult;
 
 mod youdao;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
+    let app_result = App::new().run(terminal).await;
     ratatui::restore();
     app_result
 }
@@ -29,12 +29,9 @@ struct App {
     character_index: usize,
     /// Current input mode
     input_mode: InputMode,
-    /// History of recorded messages
-    messages: Vec<String>,
     /// Word search result
     word_result: Option<WordResult>,
     client: Client,
-    rt: Runtime,
 }
 
 enum InputMode {
@@ -45,15 +42,12 @@ enum InputMode {
 impl App {
     fn new() -> Self {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
-        let rt = Runtime::new().unwrap();
         Self {
             input: String::new(),
             input_mode: InputMode::Normal,
-            messages: Vec::new(),
             character_index: 0,
             word_result: None,
             client,
-            rt,
         }
     }
 
@@ -115,18 +109,16 @@ impl App {
         self.character_index = 0;
     }
 
-    fn submit_message(&mut self) {
-        self.messages.push(self.input.clone());
-        let handle = self.rt.handle();
-        let word_result = handle
-            .block_on(youdao::word_result(&self.client, &self.input))
+    async fn submit_message(&mut self) {
+        let word_result = youdao::word_result(&self.client, &self.input)
+            .await
             .unwrap();
         self.word_result = Some(word_result);
         self.input.clear();
         self.reset_cursor();
     }
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|frame| self.draw(frame))?;
 
@@ -142,7 +134,7 @@ impl App {
                         _ => {}
                     },
                     InputMode::Editing if key.kind == KeyEventKind::Press => match key.code {
-                        KeyCode::Enter => self.submit_message(),
+                        KeyCode::Enter => self.submit_message().await,
                         KeyCode::Char(to_insert) => self.enter_char(to_insert),
                         KeyCode::Backspace => self.delete_char(),
                         KeyCode::Left => self.move_cursor_left(),
@@ -213,16 +205,6 @@ impl App {
             )),
         }
 
-        let messages: Vec<ListItem> = self
-            .messages
-            .iter()
-            .enumerate()
-            .map(|(i, m)| {
-                let content = Line::from(Span::raw(format!("{i}: {m}")));
-                ListItem::new(content)
-            })
-            .collect();
-        let messages = List::new(messages).block(Block::bordered().title("Messages"));
         let text = match &self.word_result {
             Some(wr) => format!(
                 "{}:\n{}\n{}\n{}\n",
