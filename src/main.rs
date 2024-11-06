@@ -44,7 +44,7 @@ impl App {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
         Self {
             input: String::new(),
-            input_mode: InputMode::Normal,
+            input_mode: InputMode::Editing,
             character_index: 0,
             word_result: None,
             client,
@@ -131,6 +131,9 @@ impl App {
                         KeyCode::Char('q') => {
                             return Ok(());
                         }
+                        KeyCode::Esc => {
+                            return Ok(());
+                        }
                         _ => {}
                     },
                     InputMode::Editing if key.kind == KeyEventKind::Press => match key.code {
@@ -161,6 +164,8 @@ impl App {
                 vec![
                     "Press ".into(),
                     "q".bold(),
+                    " or ".into(),
+                    "Esc".bold(),
                     " to exit, ".into(),
                     "e".bold(),
                     " to start editing.".bold(),
@@ -173,7 +178,7 @@ impl App {
                     "Esc".bold(),
                     " to stop editing, ".into(),
                     "Enter".bold(),
-                    " to record the message".into(),
+                    " to search".into(),
                 ],
                 Style::default(),
             ),
@@ -206,10 +211,23 @@ impl App {
         }
 
         let text = match &self.word_result {
-            Some(wr) => format!(
-                "{}:\n{}\n{}\n{}\n",
-                wr.word_head, wr.phone_con, wr.simple_dict, wr.catalogue_sentence
-            ),
+            Some(youdao::WordResult {
+                word_head,
+                phone_con,
+                simple_dict,
+                catalogue_sentence,
+                not_found,
+                maybe,
+            }) => {
+                if *not_found {
+                    format!("{}:\n\n{}\n", word_head, maybe)
+                } else {
+                    format!(
+                        "{}:\n\n{}\n{}\n{}\n",
+                        word_head, phone_con, simple_dict, catalogue_sentence
+                    )
+                }
+            }
             None => "".to_string(),
         };
         let paragraph = Paragraph::new(text).block(Block::bordered().title("Result"));

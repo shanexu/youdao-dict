@@ -37,6 +37,8 @@ pub struct WordResult {
     pub phone_con: String,
     pub simple_dict: String,
     pub catalogue_sentence: String,
+    pub not_found: bool,
+    pub maybe: String,
 }
 
 #[allow(dead_code)]
@@ -53,16 +55,22 @@ pub async fn word_result(client: &Client, word: &str) -> Result<WordResult, Box<
     url.query_pairs_mut().append_pair("word", word);
     let body = client.get(url).send().await?.text().await?;
     let dom = Html::parse_document(&body);
+
     let word_head_selector = Selector::parse(".word-head .title")?;
-    let word_head: String = dom
-        .select(&word_head_selector)
-        .next()
-        .unwrap()
-        .text()
+    let (word_head, not_found) = match dom.select(&word_head_selector).next() {
+        Some(el) => (el.text().next().unwrap().to_string(), false),
+        None => (word.to_string(), true),
+    };
+
+    let maybe_selector = Selector::parse(".maybe")?;
+    let maybe = dom
+        .select(&maybe_selector)
         .into_iter()
         .next()
-        .unwrap()
-        .to_string();
+        .map(|t| t.html())
+        .map(|h| html2text::from_read(h.as_bytes(), 200).unwrap())
+        .unwrap_or_default();
+
     let phone_con_selector = Selector::parse(".phone_con")?;
     let phone_con = dom
         .select(&phone_con_selector)
@@ -81,7 +89,7 @@ pub async fn word_result(client: &Client, word: &str) -> Result<WordResult, Box<
         .map(|h| html2text::from_read(h.as_bytes(), 200).unwrap())
         .unwrap_or_default();
 
-    let catalogue_sentence_selector = Selector::parse("#catalogue_sentence .dict-book")?;
+    let catalogue_sentence_selector = Selector::parse("#catalogue_sentence .dict-book ul")?;
     let catalogue_sentence = dom
         .select(&catalogue_sentence_selector)
         .into_iter()
@@ -95,5 +103,7 @@ pub async fn word_result(client: &Client, word: &str) -> Result<WordResult, Box<
         phone_con,
         simple_dict,
         catalogue_sentence,
+        not_found,
+        maybe
     })
 }
