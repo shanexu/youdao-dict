@@ -1,7 +1,6 @@
 // use std::{env::args, error::Error};
 
 use reqwest::Client;
-use futures::executor::block_on;
 use tokio::runtime::Runtime;
 
 // mod youdao;
