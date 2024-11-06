@@ -1,29 +1,3 @@
-// use std::{env::args, error::Error};
-
-use reqwest::Client;
-use tokio::runtime::Runtime;
-
-// mod youdao;
-
-// // #[tokio::main]
-// async fn main0() -> Result<(), Box<dyn Error>> {
-//     let client = Client::builder().user_agent("curl/8.10.1").build()?;
-//     // let resp = suggest(&client, "test").await?;
-//     // println!("{resp:#?}");
-//     let args: Vec<String> = args().collect();
-//     let mut args_iter = args.iter();
-//     args_iter.next();
-//     let word = args_iter.next().unwrap();
-
-//     let result = youdao::word_result(&client, &word).await?;
-//     println!(
-//         "{}:\n{}\n{}\n{}\n",
-//         result.word_head, result.phone_con, result.simple_dict, result.catalogue_sentence
-//     );
-
-//     Ok(())
-// }
-
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -33,6 +7,8 @@ use ratatui::{
     widgets::{Block, List, ListItem, Paragraph},
     DefaultTerminal, Frame,
 };
+use reqwest::Client;
+use tokio::runtime::Runtime;
 use youdao::WordResult;
 
 mod youdao;
@@ -142,7 +118,9 @@ impl App {
     fn submit_message(&mut self) {
         self.messages.push(self.input.clone());
         let handle = self.rt.handle();
-        let word_result = handle.block_on(youdao::word_result(&self.client, &self.input)).unwrap();
+        let word_result = handle
+            .block_on(youdao::word_result(&self.client, &self.input))
+            .unwrap();
         self.word_result = Some(word_result);
         self.input.clear();
         self.reset_cursor();
@@ -246,7 +224,10 @@ impl App {
             .collect();
         let messages = List::new(messages).block(Block::bordered().title("Messages"));
         let text = match &self.word_result {
-            Some(wr) => format!("{}:\n{}\n{}\n{}\n", wr.word_head, wr.phone_con, wr.simple_dict, wr.catalogue_sentence),
+            Some(wr) => format!(
+                "{}:\n{}\n{}\n{}\n",
+                wr.word_head, wr.phone_con, wr.simple_dict, wr.catalogue_sentence
+            ),
             None => "".to_string(),
         };
         let paragraph = Paragraph::new(text).block(Block::bordered().title("Result"));
