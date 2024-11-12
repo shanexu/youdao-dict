@@ -1,7 +1,7 @@
 use crate::cmd;
 use crate::youdao;
-use iced::widget::{button, column, row, text_input, Text};
-use iced::Font;
+use iced::widget::{button, column, markdown, row, scrollable, text_input};
+use iced::Theme;
 use iced::{Element, Task};
 use reqwest::Client;
 use std::borrow::Borrow;
@@ -9,17 +9,18 @@ use std::sync::Arc;
 
 pub fn run_gui(args: cmd::App) -> iced::Result {
     let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
-    iced::application("Youdao Dict", State::update, view)
-        .run_with(|| {
-            (
-                State {
-                    client: Arc::new(client),
-                    input_value: args.global_opts.word,
-                    word_result: None,
-                },
-                Task::done(Message::SearchWord),
-            )
-        })
+    iced::application("Youdao Dict", State::update, view).run_with(|| {
+        (
+            State {
+                client: Arc::new(client),
+                input_value: args.global_opts.word,
+                word_result: None,
+                markdown_items: vec![],
+                word_result_content: "".to_string(),
+            },
+            Task::done(Message::SearchWord),
+        )
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +28,7 @@ enum Message {
     InputChange(String),
     SearchWord,
     ResultFetched(Option<youdao::WordResult>),
+    LinkClicked(markdown::Url),
 }
 
 #[derive(Debug, Default)]
@@ -34,6 +36,8 @@ struct State {
     client: Arc<Client>,
     input_value: Option<String>,
     word_result: Option<youdao::WordResult>,
+    markdown_items: Vec<markdown::Item>,
+    word_result_content: String,
 }
 
 impl State {
@@ -59,6 +63,25 @@ impl State {
             }
             Message::ResultFetched(result) => {
                 self.word_result = result;
+                let content = match self.word_result {
+                    Some(ref r) => {
+                        if r.not_found {
+                            format!("{}:\n\n{}\n", r.word_head, r.maybe)
+                        } else {
+                            format!(
+                                "{}:\n\n{}\n\n{}\n\n{}\n",
+                                r.word_head, r.phone_con, r.simple_dict, r.catalogue_sentence
+                            )
+                        }
+                    }
+                    None => "".to_string(),
+                };
+                self.word_result_content = content;
+                self.markdown_items = markdown::parse(&self.word_result_content).collect();
+                Task::none()
+            }
+            Message::LinkClicked(url) => {
+                println!("The following url was clicked: {url}");
                 Task::none()
             }
         }
@@ -66,35 +89,19 @@ impl State {
 }
 
 fn view(state: &State) -> Element<'_, Message> {
-    // button(text(state.count)).on_press(Message::Increment).into()
-    let content = match &state.word_result {
-        Some(youdao::WordResult {
-            word_head,
-            phone_con,
-            simple_dict,
-            catalogue_sentence,
-            not_found,
-            maybe,
-        }) => {
-            if *not_found {
-                format!("{}:\n\n{}\n", word_head, maybe)
-            } else {
-                format!(
-                    "{}:\n\n{}\n{}\n{}\n",
-                    word_head, phone_con, simple_dict, catalogue_sentence
-                )
-            }
-        }
-        None => "".to_string(),
-    };
     let input = text_input("", state.input_value.as_deref().unwrap_or_default())
         .id("word")
         .on_input(Message::InputChange)
         .on_submit(Message::SearchWord);
-    let f = Font::with_name("LXGW Neo XiHei Screen Full");
+    let preview = markdown(
+        &state.markdown_items,
+        markdown::Settings::default(),
+        markdown::Style::from_palette(Theme::TokyoNightStorm.palette()),
+    )
+    .map(Message::LinkClicked);
     column![
-        row![input, button("Search").on_press(Message::SearchWord),],
-        row![Text::new(content).font(f),],
+        row![input, button("Search").on_press(Message::SearchWord)],
+        scrollable(preview).spacing(10)
     ]
     .into()
 }

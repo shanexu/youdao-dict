@@ -59,28 +59,15 @@ pub async fn word_result(client: &Client, word: &str) -> Result<WordResult, Box<
 
 fn parse_word_result_body(word: &str, body: &str) -> Result<WordResult, Box<dyn Error>> {
     let dom = Html::parse_document(body);
-
-    let word_head_selector = Selector::parse(".word-head .title")?;
-    let (word_head, not_found) = match dom.select(&word_head_selector).next() {
-        Some(el) => (el.text().next().unwrap().to_string(), false),
-        None => (word.to_string(), true),
-    };
-
-    let maybe_selector = Selector::parse(".maybe")?;
-    let maybe = dom
-        .select(&maybe_selector)
-        .into_iter()
-        .next()
-        .map(|t| t.html())
-        .map(|h| html2text::from_read(h.as_bytes(), 200).unwrap())
-        .unwrap_or_default();
-
+    let word_head_opt = parse_word_head(&dom);
+    let not_found = word_head_opt.is_none();
+    let maybe = parse_maybe(&dom).unwrap_or_default();
     let phone_con = parse_phone_con(&dom).unwrap_or_default();
     let simple_dict = parse_simple_dict(&dom).unwrap_or_default();
     let catalogue_sentence = parse_catalogue_sentence(&dom).unwrap_or_default();
 
     Ok(WordResult {
-        word_head,
+        word_head: word_head_opt.unwrap_or_else(|| format!("# {}:", word)),
         phone_con,
         simple_dict,
         catalogue_sentence,
@@ -89,13 +76,28 @@ fn parse_word_result_body(word: &str, body: &str) -> Result<WordResult, Box<dyn 
     })
 }
 
+fn parse_maybe(dom: &Html) -> Option<String> {
+    let maybe_selector = Selector::parse(".maybe").unwrap();
+    dom.select(&maybe_selector)
+        .next()
+        .map(|t| t.text().collect::<Vec<_>>().join("\n"))
+}
+
+fn parse_word_head(dom: &Html) -> Option<String> {
+    let word_head_selector = Selector::parse(".word-head .title").unwrap();
+    dom.select(&word_head_selector)
+        .next()
+        .and_then(|el| el.text().next())
+        .map(|h| format!("# {}", h))
+}
+
 fn parse_phone_con(dom: &Html) -> Option<String> {
     let per_phone_selector = Selector::parse(".phone_con .per-phone").unwrap();
     Some(
         dom.select(&per_phone_selector)
             .map(|el| format!("- {}", el.text().collect::<Vec<_>>().join(" ")))
             .collect::<Vec<String>>()
-            .join(" "),
+            .join("\n"),
     )
 }
 
@@ -141,7 +143,7 @@ fn parse_catalogue_sentence(dom: &Html) -> Option<String> {
             let idx_str = format!("{}. ", idx);
             let indent = " ".repeat(idx_str.len());
             Some(format!(
-                "{}{}\n{}{}\n{}{}",
+                "{}{}\\\n{}{}\\\n{}{}",
                 idx_str, eng, indent, cn, indent, dict
             ))
         })
@@ -152,14 +154,26 @@ fn parse_catalogue_sentence(dom: &Html) -> Option<String> {
 
 #[cfg(test)]
 #[test]
-fn test_parse() -> Result<(), Box<dyn Error>> {
+fn test_parse_normal() -> Result<(), Box<dyn Error>> {
     use std::fs;
-    let body = fs::read_to_string("fire.html").unwrap();
+    let body = fs::read_to_string("fire.html")?;
     let dom = Html::parse_document(&body);
 
+    println!("{:?}", parse_word_head(&dom).unwrap());
     println!("{}", parse_phone_con(&dom).unwrap());
     println!("{}", parse_simple_dict(&dom).unwrap());
     println!("{}", parse_catalogue_sentence(&dom).unwrap());
 
+    Ok(())
+}
+
+#[cfg(test)]
+#[test]
+fn test_parse_maybe() -> Result<(), Box<dyn Error>> {
+    use std::fs;
+    let body = fs::read_to_string("zlib.html")?;
+    let dom = Html::parse_document(&body);
+
+    println!("{}", parse_maybe(&dom).unwrap());
     Ok(())
 }
