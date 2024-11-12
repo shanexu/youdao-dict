@@ -1,6 +1,7 @@
 use crate::cmd;
 use crate::youdao;
-use iced::widget::{button, column, markdown, row, scrollable, text_input};
+use iced::widget::{button, column, markdown, row, scrollable, text_input, Text};
+use iced::Font;
 use iced::Theme;
 use iced::{Element, Task};
 use reqwest::Client;
@@ -8,19 +9,7 @@ use std::borrow::Borrow;
 use std::sync::Arc;
 
 pub fn run_gui(args: cmd::App) -> iced::Result {
-    let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
-    iced::application("Youdao Dict", State::update, view).run_with(|| {
-        (
-            State {
-                client: Arc::new(client),
-                input_value: args.global_opts.word,
-                word_result: None,
-                markdown_items: vec![],
-                word_result_content: "".to_string(),
-            },
-            Task::done(Message::SearchWord),
-        )
-    })
+    iced::application("Youdao Dict", State::update, State::view).run_with(|| State::new(args))
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +30,19 @@ struct State {
 }
 
 impl State {
+    fn new(args: cmd::App) -> (Self, Task<Message>) {
+        let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
+        (
+            Self {
+                client: Arc::new(client),
+                input_value: args.global_opts.word,
+                word_result: None,
+                markdown_items: vec![],
+                word_result_content: "".to_string(),
+            },
+            Task::done(Message::SearchWord),
+        )
+    }
     fn update(self: &mut State, message: Message) -> Task<Message> {
         match message {
             Message::InputChange(value) => {
@@ -86,24 +88,29 @@ impl State {
             }
         }
     }
-}
 
-fn view(state: &State) -> Element<'_, Message> {
-    let input = text_input("", state.input_value.as_deref().unwrap_or_default())
-        .id("word")
-        .on_input(Message::InputChange)
-        .on_submit(Message::SearchWord);
-    let preview = markdown(
-        &state.markdown_items,
-        markdown::Settings::default(),
-        markdown::Style::from_palette(Theme::TokyoNightStorm.palette()),
-    )
-    .map(Message::LinkClicked);
-    column![
-        row![input, button("Search").on_press(Message::SearchWord)],
-        scrollable(preview).spacing(10)
-    ]
-    .into()
+    fn view(self: &State) -> Element<'_, Message> {
+        let ft = Font::with_name("LXGW Neo XiHei Screen Full");
+        let input = text_input("", self.input_value.as_deref().unwrap_or_default())
+            .id("word")
+            .on_input(Message::InputChange)
+            .on_submit(Message::SearchWord);
+        let preview = markdown(
+            &self.markdown_items,
+            markdown::Settings::default(),
+            markdown::Style::from_palette(Theme::TokyoNightStorm.palette()),
+        )
+        .map(Message::LinkClicked);
+        column![
+            row![
+                input,
+                button(Text::new("查询").font(ft)).on_press(Message::SearchWord),
+                button(Text::new("收藏").font(ft)).on_press(Message::SearchWord),
+            ],
+            scrollable(preview).spacing(10)
+        ]
+        .into()
+    }
 }
 
 async fn search_word(client: &Client, word: &str) -> Option<youdao::WordResult> {
