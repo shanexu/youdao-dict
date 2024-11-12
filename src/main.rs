@@ -1,3 +1,4 @@
+use clap::Parser;
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -11,12 +12,17 @@ use reqwest::Client;
 use youdao::WordResult;
 
 mod youdao;
+mod cmd;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = cmd::App::parse();
+    println!("{:?}", args);
+
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let app_result = App::new().run(terminal).await;
+    let app = App::new(args.global_opts.word.unwrap_or_default());
+    let app_result = app.run(terminal).await;
     ratatui::restore();
     app_result
 }
@@ -40,10 +46,10 @@ enum InputMode {
 }
 
 impl App {
-    fn new() -> Self {
+    fn new(input: String) -> Self {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
         Self {
-            input: String::new(),
+            input,
             input_mode: InputMode::Editing,
             character_index: 0,
             word_result: None,
