@@ -31,7 +31,7 @@ pub struct ApiResponse {
     data: Data,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WordResult {
     pub word_head: String,
     pub phone_con: String,

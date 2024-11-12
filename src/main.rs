@@ -1,19 +1,24 @@
 use clap::Parser;
-use color_eyre::Result;
+// use color_eyre::Result;
 
 mod youdao;
 mod cmd;
 mod tui;
+mod gui;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() {
     let args = cmd::App::parse();
-    println!("{:?}", args);
 
-    color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app = tui::App::new(args.global_opts.word.unwrap_or_default());
-    let app_result = app.run(terminal).await;
-    ratatui::restore();
-    app_result
+    if let Some(cmd::Command::Gui) = args.command {
+        gui::run_gui(args).unwrap()
+    } else {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                tui::run_tui(args).await
+            }).unwrap();
+    }
 }
+

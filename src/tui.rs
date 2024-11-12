@@ -9,6 +9,7 @@ use ratatui::{
     DefaultTerminal, Frame,
 };
 use reqwest::Client;
+use crate::cmd;
 
 // /// A type alias for the terminal type used in this application
 // pub type Tui = Terminal<CrosstermBackend<Stdout>>;
@@ -37,7 +38,7 @@ use reqwest::Client;
 // }
 
 /// App holds the state of the application
-pub struct App {
+struct App {
     /// Current value of the input box
     input: String,
     /// Position of cursor in the editor area.
@@ -133,7 +134,7 @@ impl App {
         self.reset_cursor();
     }
 
-    pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|frame| self.draw(frame))?;
 
@@ -249,3 +250,13 @@ impl App {
         frame.render_widget(paragraph, messages_area);
     }
 }
+
+pub async fn run_tui(args: cmd::App) -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app = App::new(args.global_opts.word.unwrap_or_default());
+    let app_result = app.run(terminal).await;
+    ratatui::restore();
+    app_result
+}
+
