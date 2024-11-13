@@ -1,5 +1,6 @@
+use crate::cmd;
+use crate::youdao::{word_result, WordResult};
 use color_eyre::Result;
-use crate::youdao::{WordResult, word_result};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Position},
@@ -9,7 +10,6 @@ use ratatui::{
     DefaultTerminal, Frame,
 };
 use reqwest::Client;
-use crate::cmd;
 
 // /// A type alias for the terminal type used in this application
 // pub type Tui = Terminal<CrosstermBackend<Stdout>>;
@@ -126,9 +126,7 @@ impl App {
     }
 
     async fn submit_message(&mut self) {
-        let word_result = word_result(&self.client, &self.input)
-            .await
-            .unwrap();
+        let word_result = word_result(&self.client, &self.input).await.unwrap();
         self.word_result = Some(word_result);
         self.input.clear();
         self.reset_cursor();
@@ -259,4 +257,3 @@ pub(crate) async fn run_tui(args: cmd::App) -> Result<()> {
     ratatui::restore();
     app_result
 }
-
