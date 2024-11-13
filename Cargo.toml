@@ -15,9 +15,14 @@ crossterm = "0.28.1"
 color-eyre = "0.6.3"
 futures = "0.3.31"
 clap = { version = "4.5.20", features = ["derive"] }
-iced = { version = "0.13.1", features = ["highlighter", "markdown", "tokio", "wgpu"] }
+iced = { version = "0.13.1", features = ["highlighter", "image", "markdown", "tokio", "wgpu"] }
 iced_aw = { version = "0.11.0", features = ["tabs", "tab_bar"] }
+iced_fonts = { version = "0.1.1", features = ["nerd"] }
 
 [[bin]]
 name = "yd"
 path = "src/main.rs"
+
+# [[bin]]
+# name = "tabs"
+# path = "src/gui/tabs.rs"
