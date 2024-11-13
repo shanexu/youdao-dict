@@ -5,6 +5,7 @@ mod youdao;
 mod cmd;
 mod tui;
 mod gui;
+mod tabs;
 
 fn main() {
     let args = cmd::App::parse();
@@ -20,5 +21,6 @@ fn main() {
                 tui::run_tui(args).await
             }).unwrap();
     }
+    tabs::main::run_tabs().unwrap()
 }
 
