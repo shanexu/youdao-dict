@@ -8,13 +8,10 @@ use reqwest::Client;
 use std::borrow::Borrow;
 use std::sync::Arc;
 
-const ICON_BYTES: &[u8] = include_bytes!("./tabs/fonts/icons.ttf");
-
 pub(crate) fn run_gui(args: cmd::App) -> iced::Result {
     iced::application("Youdao Dict", State::update, State::view)
         .font(iced_fonts::REQUIRED_FONT_BYTES)
         .font(iced_fonts::NERD_FONT_BYTES)
-        .font(ICON_BYTES)
         .run_with(|| State::new(args))
 }
 
