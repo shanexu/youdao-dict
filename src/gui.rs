@@ -8,7 +8,7 @@ use reqwest::Client;
 use std::borrow::Borrow;
 use std::sync::Arc;
 
-pub fn run_gui(args: cmd::App) -> iced::Result {
+pub(crate) fn run_gui(args: cmd::App) -> iced::Result {
     iced::application("Youdao Dict", State::update, State::view).run_with(|| State::new(args))
 }
 

@@ -251,7 +251,7 @@ impl App {
     }
 }
 
-pub async fn run_tui(args: cmd::App) -> Result<()> {
+pub(crate) async fn run_tui(args: cmd::App) -> Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
     let app = App::new(args.global_opts.word.unwrap_or_default());
