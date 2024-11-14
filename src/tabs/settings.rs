@@ -1,10 +1,11 @@
-use crate::tabs::main::{Icon, Message, Tab};
+use crate::tabs::main::{Message, Tab};
 use iced::{
     widget::{Column, Container, Radio, Text},
-    Element,
+    Element, Task,
 };
 use iced_aw::style::{tab_bar, StyleFn};
 use iced_aw::tab_bar::TabLabel;
+use iced_fonts::Nerd;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TabBarPosition {
     #[default]
@@ -55,17 +56,20 @@ pub struct SettingsTab {
 }
 
 impl SettingsTab {
-    pub fn new() -> Self {
-        SettingsTab {
-            settings: TabSettings::new(),
-        }
+    pub fn new() -> (Self, Task<SettingsMessage>) {
+        (
+            SettingsTab {
+                settings: TabSettings::new(),
+            },
+            Task::none(),
+        )
     }
 
     pub fn settings(&self) -> &TabSettings {
         &self.settings
     }
 
-    pub fn update(&mut self, message: SettingsMessage) {
+    pub fn update(&mut self, message: SettingsMessage) -> Task<SettingsMessage> {
         match message {
             SettingsMessage::PositionSelected(position) => {
                 self.settings.tab_bar_position = Some(position)
@@ -74,7 +78,8 @@ impl SettingsTab {
                 self.settings.tab_bar_theme_id = Some(index);
                 self.settings.tab_bar_theme = Some(index)
             }
-        }
+        };
+        Task::none()
     }
 }
 
@@ -86,8 +91,7 @@ impl Tab for SettingsTab {
     }
 
     fn tab_label(&self) -> TabLabel {
-        //TabLabel::Text(self.title())
-        TabLabel::IconText(Icon::CogAlt.into(), self.title())
+        TabLabel::IconText(Nerd::Settings.into(), self.title())
     }
 
     fn content(&self) -> Element<'_, Self::Message> {

@@ -4,14 +4,14 @@ use clap::Parser;
 mod youdao;
 mod cmd;
 mod tui;
-mod gui;
 mod tabs;
 
 fn main() {
     let args = cmd::App::parse();
 
     if let Some(cmd::Command::Gui) = args.command {
-        gui::run_gui(args).unwrap()
+        // gui::run_gui(args).unwrap()
+        tabs::main::run_tabs(args).unwrap()
     } else {
         tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -21,6 +21,5 @@ fn main() {
                 tui::run_tui(args).await
             }).unwrap();
     }
-    tabs::main::run_tabs().unwrap()
 }
 

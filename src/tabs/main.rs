@@ -2,90 +2,76 @@
 //
 // This was written by Kaiden42 <gitlab@tinysn.com>
 
-use crate::tabs::login;
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{Column, Container, Text},
-    Element, Font, Length,
+    Element, Length, Task,
 };
 use iced_aw::{TabLabel, Tabs};
-use login::{LoginMessage, LoginTab};
 
-use crate::tabs::ferris;
-use ferris::{FerrisMessage, FerrisTab};
-
-use crate::tabs::counter;
-use counter::{CounterMessage, CounterTab};
-
-use crate::tabs::settings;
+use crate::{cmd, tabs::settings};
 use settings::{style_from_index, SettingsMessage, SettingsTab, TabBarPosition};
+
+use super::home::{HomeMessage, HomeTab};
 
 const HEADER_SIZE: u16 = 32;
 const TAB_PADDING: u16 = 16;
-const ICON_BYTES: &[u8] = include_bytes!("./fonts/icons.ttf");
-const ICON: Font = Font::with_name("icons");
 
-pub enum Icon {
-    User,
-    Heart,
-    Calc,
-    CogAlt,
-}
-
-impl From<Icon> for char {
-    fn from(icon: Icon) -> Self {
-        match icon {
-            Icon::User => '\u{E800}',
-            Icon::Heart => '\u{E801}',
-            Icon::Calc => '\u{F1EC}',
-            Icon::CogAlt => '\u{E802}',
-        }
-    }
-}
-
-pub(crate) fn run_tabs() -> iced::Result {
+pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
     iced::application("Tabs example", TabBarExample::update, TabBarExample::view)
-        .font(iced_fonts::REQUIRED_FONT_BYTES)
-        .font(ICON_BYTES)
-        .run()
+        .font(iced_fonts::NERD_FONT_BYTES)
+        .run_with(|| {
+            let (home_tab, home_tab_task) = HomeTab::new(args);
+            let (settings_tab, settings_tab_task) = SettingsTab::new();
+            let tasks = Task::batch(vec![
+                home_tab_task.map(Message::Home),
+                settings_tab_task.map(Message::Settings),
+            ]);
+            (
+                TabBarExample {
+                    active_tab: TabId::Home,
+                    settings_tab,
+                    home_tab,
+                },
+                tasks,
+            )
+        })
 }
 
 #[derive(Default)]
 struct TabBarExample {
     active_tab: TabId,
-    login_tab: LoginTab,
-    ferris_tab: FerrisTab,
-    counter_tab: CounterTab,
     settings_tab: SettingsTab,
+    home_tab: HomeTab,
 }
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
-enum TabId {
+pub enum TabId {
     #[default]
-    Login,
-    Ferris,
-    Counter,
+    Home,
     Settings,
 }
 
 #[derive(Clone, Debug)]
 pub enum Message {
     TabSelected(TabId),
-    Login(LoginMessage),
-    Ferris(FerrisMessage),
-    Counter(CounterMessage),
     Settings(SettingsMessage),
+    Home(HomeMessage),
     TabClosed(TabId),
 }
 
 impl TabBarExample {
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::TabSelected(selected) => self.active_tab = selected,
-            Message::Login(message) => self.login_tab.update(message),
-            Message::Ferris(message) => self.ferris_tab.update(message),
-            Message::Counter(message) => self.counter_tab.update(message),
-            Message::Settings(message) => self.settings_tab.update(message),
-            Message::TabClosed(id) => println!("Tab {:?} event hit", id),
+            Message::TabSelected(selected) => {
+                self.active_tab = selected;
+                Task::none()
+            }
+            Message::Settings(message) => self.settings_tab.update(message).map(Message::Settings),
+            Message::Home(message) => self.home_tab.update(message).map(Message::Home),
+            Message::TabClosed(id) => {
+                println!("Tab {:?} event hit", id);
+                Task::none()
+            }
         }
     }
 
@@ -104,21 +90,7 @@ impl TabBarExample {
         Tabs::new(Message::TabSelected)
             .tab_icon_position(iced_aw::tabs::Position::Bottom)
             .on_close(Message::TabClosed)
-            .push(
-                TabId::Login,
-                self.login_tab.tab_label(),
-                self.login_tab.view(),
-            )
-            .push(
-                TabId::Ferris,
-                self.ferris_tab.tab_label(),
-                self.ferris_tab.view(),
-            )
-            .push(
-                TabId::Counter,
-                self.counter_tab.tab_label(),
-                self.counter_tab.view(),
-            )
+            .push(TabId::Home, self.home_tab.tab_label(), self.home_tab.view())
             .push(
                 TabId::Settings,
                 self.settings_tab.tab_label(),
@@ -126,7 +98,6 @@ impl TabBarExample {
             )
             .set_active_tab(&self.active_tab)
             .tab_bar_style(style_from_index(theme))
-            .icon_font(ICON)
             .tab_bar_position(match position {
                 TabBarPosition::Top => iced_aw::TabBarPosition::Top,
                 TabBarPosition::Bottom => iced_aw::TabBarPosition::Bottom,
