@@ -88,6 +88,7 @@ impl TabBarExample {
             .unwrap_or_default();
 
         Tabs::new(Message::TabSelected)
+            .close_size(0.001)
             .tab_icon_position(iced_aw::tabs::Position::Bottom)
             .on_close(Message::TabClosed)
             .push(TabId::Home, self.home_tab.tab_label(), self.home_tab.view())
