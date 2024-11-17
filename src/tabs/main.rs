@@ -13,6 +13,7 @@ use crate::{cmd, tabs::settings};
 use settings::{style_from_index, SettingsMessage, SettingsTab, TabBarPosition};
 
 use super::home::{HomeMessage, HomeTab};
+use super::history::{HistoryMessage, HistoryTab};
 
 const HEADER_SIZE: u16 = 32;
 const TAB_PADDING: u16 = 16;
@@ -23,6 +24,7 @@ pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
         .run_with(|| {
             let (home_tab, home_tab_task) = HomeTab::new(args);
             let (settings_tab, settings_tab_task) = SettingsTab::new();
+            let history_tab = HistoryTab{};
             let tasks = Task::batch(vec![
                 home_tab_task.map(Message::Home),
                 settings_tab_task.map(Message::Settings),
@@ -32,6 +34,7 @@ pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
                     active_tab: TabId::Home,
                     settings_tab,
                     home_tab,
+                    history_tab,
                 },
                 tasks,
             )
@@ -42,6 +45,7 @@ struct TabLayout {
     active_tab: TabId,
     settings_tab: SettingsTab,
     home_tab: HomeTab,
+    history_tab: HistoryTab,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
@@ -49,6 +53,7 @@ pub enum TabId {
     #[default]
     Home,
     Settings,
+    History,
 }
 
 #[derive(Clone, Debug)]
@@ -56,6 +61,7 @@ pub enum Message {
     TabSelected(TabId),
     Settings(SettingsMessage),
     Home(HomeMessage),
+    History(HistoryMessage),
     TabClosed(TabId),
 }
 
@@ -68,8 +74,8 @@ impl TabLayout {
             }
             Message::Settings(message) => self.settings_tab.update(message).map(Message::Settings),
             Message::Home(message) => self.home_tab.update(message).map(Message::Home),
-            Message::TabClosed(id) => {
-                println!("Tab {:?} event hit", id);
+            Message::History(message) => self.history_tab.update(message).map(Message::History),
+            Message::TabClosed(_id) => {
                 Task::none()
             }
         }
@@ -92,6 +98,7 @@ impl TabLayout {
             .tab_icon_position(iced_aw::tabs::Position::Bottom)
             .on_close(Message::TabClosed)
             .push(TabId::Home, self.home_tab.tab_label(), self.home_tab.view())
+            .push(TabId::History, self.history_tab.tab_label(), self.history_tab.view())
             .push(
                 TabId::Settings,
                 self.settings_tab.tab_label(),

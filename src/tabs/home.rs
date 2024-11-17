@@ -11,6 +11,7 @@ use iced_aw::TabLabel;
 use iced_fonts::Nerd;
 use reqwest::Client;
 use std::borrow::Borrow;
+use std::cell::RefCell;
 use std::sync::Arc;
 
 use super::main::Message;
@@ -30,13 +31,13 @@ pub struct HomeTab {
     word_result: Option<youdao::WordResult>,
     markdown_items: Vec<markdown::Item>,
     word_result_content: String,
-    conn: SqliteConnection,
+    conn: RefCell<SqliteConnection>,
 }
 
 impl HomeTab {
     pub fn new(args: cmd::App) -> (Self, Task<HomeMessage>) {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
-        let conn = db::establish_connection();
+        let conn = RefCell::new(db::establish_connection());
         (
             Self {
                 client: Arc::new(client),
@@ -77,7 +78,7 @@ impl HomeTab {
                         if r.not_found {
                             format!("{}:\n\n{}\n", r.word_head, r.maybe)
                         } else {
-                            create_history(&mut self.conn, &r.word);
+                            create_history(&mut self.conn.borrow_mut(), &r.word);
                             format!(
                                 "{}:\n\n{}\n\n{}\n\n{}\n",
                                 r.word_head, r.phone_con, r.simple_dict, r.catalogue_sentence
