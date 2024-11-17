@@ -18,7 +18,7 @@ const HEADER_SIZE: u16 = 32;
 const TAB_PADDING: u16 = 16;
 
 pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
-    iced::application("Tabs example", TabBarExample::update, TabBarExample::view)
+    iced::application("Youdao Dict", TabLayout::update, TabLayout::view)
         .font(iced_fonts::NERD_FONT_BYTES)
         .run_with(|| {
             let (home_tab, home_tab_task) = HomeTab::new(args);
@@ -28,7 +28,7 @@ pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
                 settings_tab_task.map(Message::Settings),
             ]);
             (
-                TabBarExample {
+                TabLayout {
                     active_tab: TabId::Home,
                     settings_tab,
                     home_tab,
@@ -39,7 +39,7 @@ pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
 }
 
 #[derive(Default)]
-struct TabBarExample {
+struct TabLayout {
     active_tab: TabId,
     settings_tab: SettingsTab,
     home_tab: HomeTab,
@@ -59,7 +59,7 @@ pub enum Message {
     TabClosed(TabId),
 }
 
-impl TabBarExample {
+impl TabLayout {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::TabSelected(selected) => {
