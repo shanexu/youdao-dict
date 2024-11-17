@@ -1,5 +1,8 @@
 use crate::cmd;
+use crate::db;
+use crate::db::create_history;
 use crate::youdao;
+use diesel::SqliteConnection;
 use iced::widget::{button, column, markdown, row, scrollable, text_input, Text};
 use iced::Font;
 use iced::Theme;
@@ -21,18 +24,19 @@ pub enum HomeMessage {
     LinkClicked(markdown::Url),
 }
 
-#[derive(Default)]
 pub struct HomeTab {
     client: Arc<Client>,
     input_value: Option<String>,
     word_result: Option<youdao::WordResult>,
     markdown_items: Vec<markdown::Item>,
     word_result_content: String,
+    conn: SqliteConnection,
 }
 
 impl HomeTab {
     pub fn new(args: cmd::App) -> (Self, Task<HomeMessage>) {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
+        let conn = db::establish_connection();
         (
             Self {
                 client: Arc::new(client),
@@ -40,6 +44,7 @@ impl HomeTab {
                 word_result: None,
                 markdown_items: vec![],
                 word_result_content: "".to_string(),
+                conn,
             },
             Task::done(HomeMessage::SearchWord),
         )
@@ -72,6 +77,7 @@ impl HomeTab {
                         if r.not_found {
                             format!("{}:\n\n{}\n", r.word_head, r.maybe)
                         } else {
+                            create_history(&mut self.conn, &r.word);
                             format!(
                                 "{}:\n\n{}\n\n{}\n\n{}\n",
                                 r.word_head, r.phone_con, r.simple_dict, r.catalogue_sentence

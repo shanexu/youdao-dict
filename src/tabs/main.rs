@@ -38,12 +38,12 @@ pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
         })
 }
 
-#[derive(Default)]
 struct TabLayout {
     active_tab: TabId,
     settings_tab: SettingsTab,
     home_tab: HomeTab,
 }
+
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub enum TabId {
     #[default]

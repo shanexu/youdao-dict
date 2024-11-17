@@ -33,6 +33,7 @@ pub struct ApiResponse {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WordResult {
+    pub word: String,
     pub word_head: String,
     pub phone_con: String,
     pub simple_dict: String,
@@ -67,6 +68,7 @@ fn parse_word_result_body(word: &str, body: &str) -> Result<WordResult, Box<dyn 
     let catalogue_sentence = parse_catalogue_sentence(&dom).unwrap_or_default();
 
     Ok(WordResult {
+        word: word.to_string(),
         word_head: word_head_opt.unwrap_or_else(|| format!("# {}:", word)),
         phone_con,
         simple_dict,

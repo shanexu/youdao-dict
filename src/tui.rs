@@ -226,6 +226,7 @@ impl App {
 
         let text = match &self.word_result {
             Some(WordResult {
+                word: _,
                 word_head,
                 phone_con,
                 simple_dict,
