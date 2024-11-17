@@ -18,6 +18,9 @@ clap = { version = "4.5.20", features = ["derive"] }
 iced = { version = "0.13.1", features = ["highlighter", "image", "markdown", "tokio", "wgpu"] }
 iced_aw = { version = "0.11.0", features = ["tabs", "tab_bar"] }
 iced_fonts = { version = "0.1.1", features = ["nerd"] }
+diesel = { version = "2.2.4", features = ["sqlite", "returning_clauses_for_sqlite_3_35", "chrono"] }
+dotenvy = "0.15.7"
+chrono = "0.4.38"
 
 [[bin]]
 name = "yd"

@@ -5,9 +5,17 @@ mod youdao;
 mod cmd;
 mod tui;
 mod tabs;
+mod db;
+mod models;
+mod schema;
 
 fn main() {
     let args = cmd::App::parse();
+
+    let mut conn = db::establish_connection();
+
+    db::list_history(&mut conn);
+    db::create_history(&mut conn, "world");
 
     if let Some(cmd::Command::Gui) = args.command {
         // gui::run_gui(args).unwrap()
