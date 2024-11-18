@@ -8,7 +8,7 @@ use crate::db;
 use crate::{cmd, tabs::settings};
 use iced::{
     alignment::{Horizontal, Vertical},
-    widget::{Column, Container, Text},
+    widget::{Column, Container},
     Element, Length, Task,
 };
 use iced_aw::{TabLabel, Tabs};
@@ -16,8 +16,7 @@ use settings::{style_from_index, SettingsMessage, SettingsTab, TabBarPosition};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-const HEADER_SIZE: u16 = 32;
-const TAB_PADDING: u16 = 16;
+const TAB_PADDING: u16 = 8;
 
 pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
     iced::application("Youdao Dict", TabLayout::update, TabLayout::view)
@@ -134,7 +133,6 @@ pub trait Tab {
     fn view(&self) -> Element<'_, Self::Message> {
         let column = Column::new()
             .spacing(20)
-            .push(Text::new(self.title()).size(HEADER_SIZE))
             .push(self.content())
             .align_x(iced::Alignment::Center);
 
