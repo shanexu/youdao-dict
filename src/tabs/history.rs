@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use super::common::DEFAULT_FONT;
 use super::main::Message;
@@ -7,8 +8,7 @@ use super::main::TabId;
 use crate::db;
 use crate::models::History;
 use diesel::SqliteConnection;
-use iced::widget::button;
-use iced::widget::{column, row, text};
+use iced::widget::{column, row, text, button};
 use iced::Element;
 use iced::Task;
 use iced_aw::TabLabel;
@@ -20,12 +20,12 @@ pub enum HistoryMessage {
 }
 
 pub struct HistoryTab {
-    conn: RefCell<SqliteConnection>,
+    conn: Rc<RefCell<SqliteConnection>>,
     history: Vec<History>,
 }
 
 impl HistoryTab {
-    pub fn new(conn: RefCell<SqliteConnection>) -> (Self, Task<HistoryMessage>) {
+    pub fn new(conn: Rc<RefCell<SqliteConnection>>) -> (Self, Task<HistoryMessage>) {
         (
             Self {
                 conn,

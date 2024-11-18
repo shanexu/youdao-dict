@@ -14,6 +14,7 @@ use iced::{
 use iced_aw::{TabLabel, Tabs};
 use settings::{style_from_index, SettingsMessage, SettingsTab, TabBarPosition};
 use std::cell::RefCell;
+use std::rc::Rc;
 
 const HEADER_SIZE: u16 = 32;
 const TAB_PADDING: u16 = 16;
@@ -22,10 +23,9 @@ pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
     iced::application("Youdao Dict", TabLayout::update, TabLayout::view)
         .font(iced_fonts::NERD_FONT_BYTES)
         .run_with(|| {
-            let (home_tab, home_tab_task) =
-                HomeTab::new(args, RefCell::new(db::establish_connection()));
-            let (history_tab, history_tab_task) =
-                HistoryTab::new(RefCell::new(db::establish_connection()));
+            let conn = Rc::new(RefCell::new(db::establish_connection()));
+            let (home_tab, home_tab_task) = HomeTab::new(args, Rc::clone(&conn));
+            let (history_tab, history_tab_task) = HistoryTab::new(Rc::clone(&conn));
             let (settings_tab, settings_tab_task) = SettingsTab::new();
             let tasks = Task::batch(vec![
                 home_tab_task.map(Message::Home),

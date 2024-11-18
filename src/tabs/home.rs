@@ -1,9 +1,9 @@
 use crate::cmd;
 use crate::db::create_history;
+use crate::tabs::common::DEFAULT_FONT;
 use crate::youdao;
 use diesel::SqliteConnection;
 use iced::widget::{button, column, markdown, row, scrollable, text_input, Text};
-use crate::tabs::common::DEFAULT_FONT;
 use iced::Theme;
 use iced::{Element, Task};
 use iced_aw::TabLabel;
@@ -11,6 +11,7 @@ use iced_fonts::Nerd;
 use reqwest::Client;
 use std::borrow::Borrow;
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use super::main::Message;
@@ -30,11 +31,11 @@ pub struct HomeTab {
     word_result: Option<youdao::WordResult>,
     markdown_items: Vec<markdown::Item>,
     word_result_content: String,
-    conn: RefCell<SqliteConnection>,
+    conn: Rc<RefCell<SqliteConnection>>,
 }
 
 impl HomeTab {
-    pub fn new(args: cmd::App, conn: RefCell<SqliteConnection>) -> (Self, Task<HomeMessage>) {
+    pub fn new(args: cmd::App, conn: Rc<RefCell<SqliteConnection>>) -> (Self, Task<HomeMessage>) {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
         (
             Self {
