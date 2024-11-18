@@ -7,7 +7,18 @@ use crate::{models::History, schema::history};
 pub fn establish_connection() -> SqliteConnection {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = match env::var("DATABASE_URL") {
+        Ok(v) => v,
+        _ => home::home_dir()
+            .map(|h| {
+                format!(
+                    "{}/.config/yd/database.db",
+                    h.into_os_string().into_string().unwrap()
+                )
+            })
+            .unwrap(),
+    };
+
     SqliteConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
