@@ -16,6 +16,7 @@ pub fn list_history(conn: &mut SqliteConnection) -> Vec<History> {
     use super::schema::history::dsl::*;
 
     let results = history
+        .order_by(id.desc())
         .select(History::as_select())
         .load(conn)
         .expect("Error loading posts");

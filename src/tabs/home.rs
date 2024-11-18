@@ -1,10 +1,9 @@
 use crate::cmd;
-use crate::db;
 use crate::db::create_history;
 use crate::youdao;
 use diesel::SqliteConnection;
 use iced::widget::{button, column, markdown, row, scrollable, text_input, Text};
-use iced::Font;
+use crate::tabs::common::DEFAULT_FONT;
 use iced::Theme;
 use iced::{Element, Task};
 use iced_aw::TabLabel;
@@ -35,9 +34,8 @@ pub struct HomeTab {
 }
 
 impl HomeTab {
-    pub fn new(args: cmd::App) -> (Self, Task<HomeMessage>) {
+    pub fn new(args: cmd::App, conn: RefCell<SqliteConnection>) -> (Self, Task<HomeMessage>) {
         let client = Client::builder().user_agent("curl/8.10.1").build().unwrap();
-        let conn = RefCell::new(db::establish_connection());
         (
             Self {
                 client: Arc::new(client),
@@ -111,7 +109,6 @@ impl Tab for HomeTab {
     }
 
     fn content(&self) -> Element<'_, Self::Message> {
-        let ft = Font::with_name("LXGW Neo XiHei Screen Full");
         let input = text_input("", self.input_value.as_deref().unwrap_or_default())
             .id("word")
             .on_input(HomeMessage::InputChange)
@@ -125,8 +122,8 @@ impl Tab for HomeTab {
         let content: Element<'_, HomeMessage> = column![
             row![
                 input,
-                button(Text::new("查询").font(ft)).on_press(HomeMessage::SearchWord),
-                button(Text::new("收藏").font(ft)).on_press(HomeMessage::SearchWord),
+                button(Text::new("查询").font(DEFAULT_FONT)).on_press(HomeMessage::SearchWord),
+                button(Text::new("收藏").font(DEFAULT_FONT)).on_press(HomeMessage::SearchWord),
             ],
             scrollable(preview).spacing(10)
         ]
