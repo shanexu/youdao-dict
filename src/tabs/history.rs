@@ -1,18 +1,15 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use super::common::DEFAULT_FONT;
-use super::main::Message;
-use super::main::Tab;
-use super::main::TabId;
+use super::main::{Message, Tab, TabId};
 use crate::db;
 use crate::models::History;
 use diesel::SqliteConnection;
-use iced::widget::{column, row, text, button};
+use iced::widget::{button, column, container, row, scrollable, text};
 use iced::Element;
 use iced::Task;
 use iced_aw::TabLabel;
 use iced_fonts::Nerd;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub enum HistoryMessage {
@@ -56,21 +53,24 @@ impl Tab for HistoryTab {
     }
 
     fn content(&self) -> Element<'_, Self::Message> {
-        let content: Element<'_, Message> = column(self.history.iter().map(|i| {
+        let history_rows: Element<'_, Message> = column(self.history.iter().map(|i| {
             row![
-                text!("{}", i.id),
-                text!("{}", i.word),
-                text!("{}", i.created_at),
-                button(text!("查看").font(DEFAULT_FONT))
-                    .on_press(Message::List(vec![
+                container(text!("{}", i.id)).align_right(100),
+                container(text!("{}", i.word)).center_x(200),
+                container(text!("{}", i.created_at.format("%Y-%m-%d %H:%M:%S"))).align_left(200),
+                container(
+                    button(text!("查看").font(DEFAULT_FONT)).on_press(Message::List(vec![
                         Message::TabSelected(TabId::Home),
                         Message::Home(super::home::HomeMessage::InputChange(i.word.clone())),
                         Message::Home(super::home::HomeMessage::SearchWord),
                     ]))
+                )
+                .align_right(100)
             ]
             .into()
         }))
         .into();
-        content
+
+        scrollable(history_rows).spacing(10).into()
     }
 }
