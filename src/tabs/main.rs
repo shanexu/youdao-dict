@@ -7,7 +7,7 @@ use super::home::{HomeMessage, HomeTab};
 use crate::db;
 use crate::{cmd, tabs::settings};
 use iced::{
-    alignment::{Horizontal, Vertical},
+    alignment::Horizontal,
     widget::{Column, Container},
     Element, Length, Task,
 };
@@ -16,7 +16,7 @@ use settings::{style_from_index, SettingsMessage, SettingsTab, TabBarPosition};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-const TAB_PADDING: u16 = 8;
+const TAB_PADDING: u16 = 16;
 
 pub(crate) fn run_tabs(args: cmd::App) -> iced::Result {
     iced::application("Youdao Dict", TabLayout::update, TabLayout::view)
@@ -100,7 +100,7 @@ impl TabLayout {
 
         Tabs::new(Message::TabSelected)
             .close_size(0.001)
-            .tab_icon_position(iced_aw::tabs::Position::Bottom)
+            .tab_icon_position(iced_aw::tabs::Position::Left)
             .on_close(Message::TabClosed)
             .push(TabId::Home, self.home_tab.tab_label(), self.home_tab.view())
             .push(
@@ -140,7 +140,7 @@ pub trait Tab {
             .width(Length::Fill)
             .height(Length::Fill)
             .align_x(Horizontal::Center)
-            .align_y(Vertical::Center)
+            // .align_y(Vertical::Center)
             .padding(TAB_PADDING)
             .into()
     }

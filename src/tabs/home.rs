@@ -124,7 +124,6 @@ impl Tab for HomeTab {
             row![
                 input,
                 button(Text::new("查询").font(DEFAULT_FONT)).on_press(HomeMessage::SearchWord),
-                button(Text::new("收藏").font(DEFAULT_FONT)).on_press(HomeMessage::SearchWord),
             ],
             scrollable(preview).spacing(10)
         ]
